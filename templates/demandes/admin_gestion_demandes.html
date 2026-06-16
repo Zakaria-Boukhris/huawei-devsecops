@@ -1,0 +1,272 @@
+{% extends 'base_simple.html' %}
+
+{% block title %}Gestion des Demandes - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 0;
+    margin: -20px -20px 30px -20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-left: 4px solid;
+}
+
+.stat-card.total { border-left-color: #007bff; }
+.stat-card.attente { border-left-color: #ffc107; }
+.stat-card.validees { border-left-color: #28a745; }
+.stat-card.refusees { border-left-color: #dc3545; }
+
+.filters-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.demande-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.demande-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-attente { background: #fff3cd; color: #856404; }
+.status-validee { background: #d4edda; color: #155724; }
+.status-refusee { background: #f8d7da; color: #721c24; }
+
+.btn-action {
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 5px;
+    display: inline-block;
+}
+
+.btn-traiter { background: #007bff; color: white; }
+.btn-traiter:hover { background: #0056b3; color: white; text-decoration: none; }
+
+.site-info {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>📋 Gestion des Demandes</h1>
+    <p>Interface administrateur pour traiter les demandes des employés</p>
+    <div style="margin-top: 15px;">
+        <a href="{% url 'dashboard' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+            ← Retour au Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card total">
+        <h3 style="margin: 0; color: #007bff;">{{ stats.total }}</h3>
+        <p style="margin: 5px 0 0 0;">Total Demandes</p>
+    </div>
+    
+    <div class="stat-card attente">
+        <h3 style="margin: 0; color: #ffc107;">{{ stats.en_attente }}</h3>
+        <p style="margin: 5px 0 0 0;">En Attente</p>
+    </div>
+    
+    <div class="stat-card validees">
+        <h3 style="margin: 0; color: #28a745;">{{ stats.validees }}</h3>
+        <p style="margin: 5px 0 0 0;">Validées</p>
+    </div>
+    
+    <div class="stat-card refusees">
+        <h3 style="margin: 0; color: #dc3545;">{{ stats.refusees }}</h3>
+        <p style="margin: 5px 0 0 0;">Refusées</p>
+    </div>
+</div>
+
+<div class="filters-section">
+    <h4>🔍 Filtres et Recherche</h4>
+    <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+        <div>
+            <label>Statut :</label>
+            <select name="statut" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                <option value="">Tous</option>
+                <option value="EN_ATTENTE" {% if statut_filter == 'EN_ATTENTE' %}selected{% endif %}>En Attente</option>
+                <option value="VALIDEE" {% if statut_filter == 'VALIDEE' %}selected{% endif %}>Validées</option>
+                <option value="REFUSEE" {% if statut_filter == 'REFUSEE' %}selected{% endif %}>Refusées</option>
+            </select>
+        </div>
+        
+        <div>
+            <label>Recherche :</label>
+            <input type="text" name="search" value="{{ search }}" placeholder="Email employé ou ID demande" 
+                   style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; width: 250px;">
+        </div>
+        
+        <button type="submit" style="background: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 5px;">
+            Filtrer
+        </button>
+        
+        <a href="{% url 'admin_gestion_demandes' %}" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none;">
+            Réinitialiser
+        </a>
+    </form>
+</div>
+
+{% if demandes %}
+    {% for demande in demandes %}
+    <div class="demande-card">
+        <div class="demande-header">
+            <div>
+                <h5 style="margin: 0;">Demande #{{ demande.id }}</h5>
+                <p style="margin: 5px 0 0 0; color: #666;">
+                    Par {{ demande.employee.prenom }} {{ demande.employee.nom }} ({{ demande.employee.email }})
+                </p>
+            </div>
+            <div>
+                {% if demande.statuts == 'EN_ATTENTE' %}
+                    <span class="status-badge status-attente">⏳ En Attente</span>
+                {% elif demande.statuts == 'VALIDEE' %}
+                    <span class="status-badge status-validee">✅ Validée</span>
+                {% elif demande.statuts == 'REFUSEE' %}
+                    <span class="status-badge status-refusee">❌ Refusée</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>📅 Date de demande :</strong> {{ demande.date_dmd|date:"d/m/Y H:i" }}</p>
+                <p><strong>📦 Matériel(s) :</strong></p>
+                <ul style="margin: 5px 0 0 20px;">
+                    {% for materiel in demande.materiel.all %}
+                        <li>{{ materiel.nom }} (Stock: {{ materiel.qte_dispo }})</li>
+                    {% endfor %}
+                </ul>
+                <p><strong>🔢 Quantité demandée :</strong> {{ demande.qte }}</p>
+            </div>
+            
+            <div class="col-md-6">
+                {% if demande.date_validation %}
+                    <p><strong>📅 Date de traitement :</strong> {{ demande.date_validation|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+                
+                {% if demande.commentaire_admin %}
+                    <p><strong>💬 Commentaire admin :</strong></p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-style: italic;">
+                        {{ demande.commentaire_admin }}
+                    </div>
+                {% endif %}
+                
+                <div class="site-info">
+                    <strong>🏢 Informations de livraison :</strong><br>
+                    {% for materiel in demande.materiel.all %}
+                        <span style="font-size: 14px;">
+                            {{ materiel.nom }} → Site: {{ materiel.site.nom|default:"Non assigné" }}
+                        </span><br>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; text-align: right;">
+            {% if demande.statuts == 'EN_ATTENTE' %}
+                <form method="POST" style="display: inline-block; margin-right: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="demande_id" value="{{ demande.id }}">
+                    <input type="hidden" name="action" value="valider">
+                    <button type="submit" class="btn-action" style="background: #28a745; color: white; border: none; cursor: pointer;" onclick="return confirm('Valider cette demande ?')">
+                        ✅ Valider
+                    </button>
+                </form>
+
+                <form method="POST" style="display: inline-block; margin-right: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="demande_id" value="{{ demande.id }}">
+                    <input type="hidden" name="action" value="refuser">
+                    <button type="submit" class="btn-action" style="background: #dc3545; color: white; border: none; cursor: pointer;" onclick="return confirm('Refuser cette demande ?')">
+                        ❌ Refuser
+                    </button>
+                </form>
+            {% elif demande.statuts == 'VALIDEE' %}
+                <form method="POST" style="display: inline-block; margin-right: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="demande_id" value="{{ demande.id }}">
+                    <input type="hidden" name="action" value="attente">
+                    <button type="submit" class="btn-action" style="background: #ffc107; color: black; border: none; cursor: pointer;" onclick="return confirm('Remettre en attente ?')">
+                        ⏳ Remettre en attente
+                    </button>
+                </form>
+            {% elif demande.statuts == 'REFUSEE' %}
+                <form method="POST" style="display: inline-block; margin-right: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="demande_id" value="{{ demande.id }}">
+                    <input type="hidden" name="action" value="attente">
+                    <button type="submit" class="btn-action" style="background: #ffc107; color: black; border: none; cursor: pointer;" onclick="return confirm('Remettre en attente ?')">
+                        ⏳ Remettre en attente
+                    </button>
+                </form>
+            {% endif %}
+
+            <a href="{% url 'admin_traiter_demande' demande.id %}" class="btn-action btn-traiter">
+                📝 Détails
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
+        <h4>📭 Aucune demande trouvée</h4>
+        <p>Il n'y a actuellement aucune demande correspondant aux critères.</p>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('Interface admin demandes chargée');
+console.log('Total demandes: {{ stats.total }}');
+</script>
+{% endblock %}

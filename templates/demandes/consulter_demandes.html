@@ -1,0 +1,473 @@
+{% extends 'base_simple.html' %}
+
+{% block title %}Mes Demandes - Employé{% endblock %}
+
+{% block extra_css %}
+<style>
+.employe-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 20px 0;
+    margin: -20px -20px 30px -20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-left: 4px solid;
+}
+
+.stat-card.total { border-left-color: #007bff; }
+.stat-card.attente { border-left-color: #ffc107; }
+.stat-card.validees { border-left-color: #28a745; }
+.stat-card.refusees { border-left-color: #dc3545; }
+
+.stat-number {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.demande-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.demande-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.status-attente { background: #fff3cd; color: #856404; }
+.status-validee { background: #d4edda; color: #155724; }
+.status-refusee { background: #f8d7da; color: #721c24; }
+
+.notification {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+    color: #0c5460;
+}
+
+.notification.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.notification.warning {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.btn-nouvelle {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-nouvelle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.materiel-list {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.materiel-item {
+    display: inline-block;
+    background: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    margin: 2px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+}
+
+.filters-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.notifications-panel {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.notifications-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    padding: 15px 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notifications-content {
+    padding: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    background: #f8f9fa;
+    border-left: 4px solid;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 0 5px 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.notification-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.notification-item.validee {
+    border-left-color: #28a745;
+    background: linear-gradient(90deg, #d4edda 0%, #f8f9fa 100%);
+}
+
+.notification-item.refusee {
+    border-left-color: #dc3545;
+    background: linear-gradient(90deg, #f8d7da 0%, #f8f9fa 100%);
+}
+
+.notification-item.en_attente {
+    border-left-color: #ffc107;
+    background: linear-gradient(90deg, #fff3cd 0%, #f8f9fa 100%);
+}
+
+.notification-icon {
+    font-size: 1.5em;
+    min-width: 30px;
+    text-align: center;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.notification-details {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.notification-time {
+    font-size: 0.8em;
+    color: #999;
+    font-style: italic;
+}
+
+.no-notifications {
+    text-align: center;
+    color: #666;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+.notification-badge {
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="employe-header">
+    <h1>📋 Mes Demandes</h1>
+    <p>Consultez vos demandes et suivez leurs états</p>
+    <div style="margin-top: 15px;">
+        <a href="{% url 'dashboard' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+            ← Retour au Dashboard
+        </a>
+        <a href="{% url 'creer_demande' %}" class="btn-nouvelle" style="margin-left: 10px;">
+            ➕ Nouvelle Demande
+        </a>
+    </div>
+</div>
+
+<!-- Panneau de Notifications Automatiques -->
+<div class="notifications-panel">
+    <div class="notifications-header">
+        <span>🔔</span>
+        <span>Notifications de Demandes</span>
+        {% if notifications_count > 0 %}
+            <span class="notification-badge">{{ notifications_count }}</span>
+        {% endif %}
+    </div>
+
+    <div class="notifications-content">
+        {% if recent_notifications %}
+            {% for notification in recent_notifications %}
+                <div class="notification-item {{ notification.statuts|lower }}
+                    <div class="notification-icon">
+                        {% if notification.statuts == 'VALIDEE' %}
+                            ✅
+                        {% elif notification.statuts == 'REFUSEE' %}
+                            ❌
+                        {% else %}
+                            ⏳
+                        {% endif %}
+                    </div>
+
+                    <div class="notification-content">
+                        <div class="notification-title">
+                            {% if notification.statuts == 'VALIDEE' %}
+                                Demande Validée
+                            {% elif notification.statuts == 'REFUSEE' %}
+                                Demande Refusée
+                            {% else %}
+                                Demande en Attente
+                            {% endif %}
+                        </div>
+
+                        <div class="notification-details">
+                            <strong>Demande #{{ notification.id }}</strong> - {{ notification.description|truncatechars:50 }}
+                        </div>
+
+                        <div class="notification-details">
+                            📍 Site: {{ notification.site.nom }}
+                            {% if notification.materiels.exists %}
+                                | 📦 {{ notification.materiels.count }} matériel(s)
+                            {% endif %}
+                        </div>
+
+                        <div class="notification-time">
+                            {% if notification.statuts == 'VALIDEE' %}
+                                Validée le {{ notification.date_validation|date:"d/m/Y à H:i" }}
+                            {% elif notification.statuts == 'REFUSEE' %}
+                                Refusée le {{ notification.date_validation|date:"d/m/Y à H:i" }}
+                            {% else %}
+                                Créée le {{ notification.date_dmd|date:"d/m/Y à H:i" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-notifications">
+                <h4>📭 Aucune notification récente</h4>
+                <p>Les notifications de validation/refus de vos demandes apparaîtront ici automatiquement.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div class="stats-grid">
+    <div class="stat-card total">
+        <h3>Total</h3>
+        <div class="stat-number">{{ demandes.count }}</div>
+        <p>Toutes mes demandes</p>
+    </div>
+    
+    <div class="stat-card attente">
+        <h3>En Attente</h3>
+        <div class="stat-number">{{ en_attente_count }}</div>
+        <p>En cours de traitement</p>
+    </div>
+    
+    <div class="stat-card validees">
+        <h3>Validées</h3>
+        <div class="stat-number">{{ validees_count }}</div>
+        <p>Approuvées</p>
+    </div>
+    
+    <div class="stat-card refusees">
+        <h3>Refusées</h3>
+        <div class="stat-number">{{ refusees_count }}</div>
+        <p>Non approuvées</p>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="filters-section">
+    <h4>🔍 Filtres</h4>
+    <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+        <div>
+            <label>Statut :</label>
+            <select name="statut" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                <option value="">Tous les statuts</option>
+                <option value="EN_ATTENTE" {% if statut_filter == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
+                <option value="VALIDEE" {% if statut_filter == 'VALIDEE' %}selected{% endif %}>Validées</option>
+                <option value="REFUSEE" {% if statut_filter == 'REFUSEE' %}selected{% endif %}>Refusées</option>
+            </select>
+        </div>
+        
+        <button type="submit" style="background: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 5px;">
+            Filtrer
+        </button>
+        
+        <a href="{% url 'consulter_demandes' %}" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none;">
+            Réinitialiser
+        </a>
+    </form>
+</div>
+
+<!-- Liste des demandes -->
+{% if demandes %}
+    {% for demande in demandes %}
+    <div class="demande-card">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h5 style="margin: 0; margin-right: 15px;">Demande #{{ demande.id }}</h5>
+                    
+                    {% if demande.statuts == 'EN_ATTENTE' %}
+                        <span class="status-badge status-attente">⏳ En attente</span>
+                    {% elif demande.statuts == 'VALIDEE' %}
+                        <span class="status-badge status-validee">✅ Validée</span>
+                    {% elif demande.statuts == 'REFUSEE' %}
+                        <span class="status-badge status-refusee">❌ Refusée</span>
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>📅 Date de demande :</strong> {{ demande.date_dmd|date:"d/m/Y à H:i" }}</p>
+                        <p><strong>📦 Quantité :</strong> {{ demande.qte }} unité(s)</p>
+                        {% if demande.site %}
+                            <p><strong>🏢 Site de livraison :</strong> {{ demande.site.nom }} - {{ demande.site.location }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if demande.date_validation %}
+                            <p><strong>📋 Date de traitement :</strong> {{ demande.date_validation|date:"d/m/Y à H:i" }}</p>
+                        {% endif %}
+                        {% if demande.admin %}
+                            <p><strong>👤 Traité par :</strong> {{ demande.admin.prenom|default:demande.admin.username }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if demande.description %}
+                    <div style="margin-top: 10px;">
+                        <strong>📝 Description :</strong>
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 5px;">
+                            {{ demande.description }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if demande.commentaire_admin %}
+                    <div style="margin-top: 10px;">
+                        <strong>💬 Commentaire administrateur :</strong>
+                        <div style="background: #e3f2fd; padding: 10px; border-radius: 5px; margin-top: 5px; border-left: 4px solid #2196f3;">
+                            {{ demande.commentaire_admin }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="materiel-list">
+                    <strong>📦 Matériels demandés :</strong>
+                    {% for materiel in demande.materiel.all %}
+                        <span class="materiel-item">{{ materiel.nom }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
+        <h4>📭 Aucune demande trouvée</h4>
+        <p>Vous n'avez pas encore créé de demande ou aucune ne correspond aux critères.</p>
+        <a href="{% url 'creer_demande' %}" class="btn-nouvelle">
+            ➕ Créer ma première demande
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Marquer les nouvelles demandes validées comme vues
+    const validatedDemandes = document.querySelectorAll('.status-validee');
+    if (validatedDemandes.length > 0) {
+        console.log('Demandes validées détectées:', validatedDemandes.length);
+    }
+    
+    // Animation d'entrée pour les cartes
+    const cards = document.querySelectorAll('.demande-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+
+console.log('Interface mes demandes chargée');
+console.log('Total demandes: {{ demandes.count }}');
+console.log('En attente: {{ en_attente_count }}');
+console.log('Validées: {{ validees_count }}');
+</script>
+{% endblock %}

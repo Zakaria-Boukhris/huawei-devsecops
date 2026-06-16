@@ -1,0 +1,387 @@
+{% extends 'base_simple.html' %}
+
+{% block title %}Matériels Disponibles - Employé{% endblock %}
+
+{% block extra_css %}
+<style>
+.employe-header {
+    background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+    color: white;
+    padding: 20px 0;
+    margin: -20px -20px 30px -20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-left: 4px solid;
+}
+
+.stat-card.total { border-left-color: #6f42c1; }
+.stat-card.disponibles { border-left-color: #28a745; }
+.stat-card.faible { border-left-color: #ffc107; }
+.stat-card.rupture { border-left-color: #dc3545; }
+
+.stat-number {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.materiel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.materiel-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.materiel-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.stock-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.stock-disponible { background: #d4edda; color: #155724; }
+.stock-faible { background: #fff3cd; color: #856404; }
+.stock-rupture { background: #f8d7da; color: #721c24; }
+
+.materiel-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+    padding-right: 80px;
+}
+
+.materiel-reference {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.materiel-description {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.materiel-site {
+    color: #007bff;
+    font-size: 0.9em;
+    margin: 10px 0;
+}
+
+.btn-demander {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.btn-demander:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-demander:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.filters-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.search-box {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.btn-filter {
+    background: #6f42c1;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-reset {
+    background: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="employe-header">
+    <h1>📦 Matériels Disponibles</h1>
+    <p>Consultez tous les matériels disponibles et créez vos demandes</p>
+    <div style="margin-top: 15px;">
+        <a href="{% url 'dashboard' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+            ← Retour au Dashboard
+        </a>
+        <a href="{% url 'creer_demande' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-left: 10px;">
+            ➕ Nouvelle Demande
+        </a>
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div class="stats-grid">
+    <div class="stat-card total">
+        <h3>Total</h3>
+        <div class="stat-number">{{ materiels.count }}</div>
+        <p>Matériels référencés</p>
+    </div>
+    
+    <div class="stat-card disponibles">
+        <h3>Disponibles</h3>
+        <div class="stat-number">{{ disponibles_count }}</div>
+        <p>En stock (>10)</p>
+    </div>
+    
+    <div class="stat-card faible">
+        <h3>Stock Faible</h3>
+        <div class="stat-number">{{ faible_count }}</div>
+        <p>Stock limité (1-10)</p>
+    </div>
+    
+    <div class="stat-card rupture">
+        <h3>Rupture</h3>
+        <div class="stat-number">{{ rupture_count }}</div>
+        <p>Non disponibles</p>
+    </div>
+</div>
+
+<!-- Filtres et recherche -->
+<div class="filters-section">
+    <h4>🔍 Recherche et Filtres</h4>
+    <form method="GET">
+        <input type="text" name="search" class="search-box" 
+               placeholder="Rechercher par nom, référence ou description..." 
+               value="{{ search_query }}">
+        
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Disponibilité :</label>
+                <select name="stock">
+                    <option value="">Tous les stocks</option>
+                    <option value="disponible" {% if stock_filter == 'disponible' %}selected{% endif %}>Disponibles (>10)</option>
+                    <option value="faible" {% if stock_filter == 'faible' %}selected{% endif %}>Stock faible (1-10)</option>
+                    <option value="rupture" {% if stock_filter == 'rupture' %}selected{% endif %}>Rupture de stock</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Site :</label>
+                <select name="site">
+                    <option value="">Tous les sites</option>
+                    {% for site in sites %}
+                        <option value="{{ site.id }}" {% if site_filter == site.id|stringformat:"s" %}selected{% endif %}>
+                            {{ site.nom }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-filter">Filtrer</button>
+            <a href="{% url 'voir_materiels' %}" class="btn-reset">Réinitialiser</a>
+        </div>
+    </form>
+</div>
+
+<!-- Liste des matériels -->
+{% if materiels %}
+    <div class="materiel-grid">
+        {% for materiel in materiels %}
+        <div class="materiel-card">
+            {% if materiel.qte_dispo > 10 %}
+                <span class="stock-badge stock-disponible">{{ materiel.qte_dispo }} disponibles</span>
+            {% elif materiel.qte_dispo > 0 %}
+                <span class="stock-badge stock-faible">{{ materiel.qte_dispo }} restants</span>
+            {% else %}
+                <span class="stock-badge stock-rupture">Rupture de stock</span>
+            {% endif %}
+            
+            <div class="materiel-title">{{ materiel.nom }}</div>
+            
+            {% if materiel.reference %}
+                <div class="materiel-reference">
+                    <strong>Référence :</strong> {{ materiel.reference }}
+                </div>
+            {% endif %}
+            
+            {% if materiel.description %}
+                <div class="materiel-description">
+                    {{ materiel.description }}
+                </div>
+            {% endif %}
+            
+            {% if materiel.site %}
+                <div class="materiel-site">
+                    📍 Site : {{ materiel.site.nom }} - {{ materiel.site.location }}
+                </div>
+            {% endif %}
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: bold;">Stock actuel :</span>
+                    <span style="font-size: 1.1em; font-weight: bold; 
+                                 color: {% if materiel.qte_dispo > 10 %}#28a745{% elif materiel.qte_dispo > 0 %}#ffc107{% else %}#dc3545{% endif %};">
+                        {{ materiel.qte_dispo }} unité(s)
+                    </span>
+                </div>
+                
+                {% if materiel.qte_dispo > 0 %}
+                    <a href="{% url 'creer_demande' %}?materiel={{ materiel.id }}" class="btn-demander">
+                        🛒 Demander ce matériel
+                    </a>
+                {% else %}
+                    <button class="btn-demander" disabled>
+                        ❌ Non disponible
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <h4>📭 Aucun matériel trouvé</h4>
+        <p>Aucun matériel ne correspond aux critères de recherche.</p>
+        <a href="{% url 'voir_materiels' %}" class="btn-reset">
+            Voir tous les matériels
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation d'entrée pour les cartes
+    const cards = document.querySelectorAll('.materiel-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 50);
+    });
+    
+    // Recherche en temps réel
+    const searchBox = document.querySelector('.search-box');
+    let searchTimeout;
+    
+    searchBox.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            // Auto-submit après 500ms d'inactivité
+            if (this.value.length >= 3 || this.value.length === 0) {
+                this.form.submit();
+            }
+        }, 500);
+    });
+});
+
+console.log('Interface matériels chargée');
+console.log('Total matériels: {{ materiels.count }}');
+console.log('Disponibles: {{ disponibles_count }}');
+</script>
+{% endblock %}

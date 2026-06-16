@@ -1,0 +1,258 @@
+{% extends 'base_simple.html' %}
+
+{% block title %}Dashboard Employé - Système Huawei{% endblock %}
+
+{% block content %}
+<div class="card-simple">
+    <h2>Bienvenue, {{ user.prenom|default:user.username }}!</h2>
+    <p>Voici votre espace personnel pour gérer vos demandes de matériel.</p>
+    <div style="background-color: #e7f3ff; padding: 10px; border-radius: 5px; border-left: 4px solid blue;">
+        <strong>Rôle :</strong> Employé Huawei
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-3">
+        <div style="background-color: white; border: 1px solid #ddd; padding: 20px; text-align: center; border-radius: 5px;">
+            <h3 style="color: red; margin: 0;">{{ mes_demandes_count }}</h3>
+            <p style="margin: 5px 0 0 0;">Mes Demandes</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div style="background-color: white; border: 1px solid #ddd; padding: 20px; text-align: center; border-radius: 5px;">
+            <h3 style="color: orange; margin: 0;">{{ demandes_en_attente }}</h3>
+            <p style="margin: 5px 0 0 0;">En Attente</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div style="background-color: white; border: 1px solid #ddd; padding: 20px; text-align: center; border-radius: 5px;">
+            <h3 style="color: green; margin: 0;">{{ demandes_validees }}</h3>
+            <p style="margin: 5px 0 0 0;">Validées</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div style="background-color: white; border: 1px solid #ddd; padding: 20px; text-align: center; border-radius: 5px;">
+            <h3 style="color: red; margin: 0;">{{ demandes_refusees }}</h3>
+            <p style="margin: 5px 0 0 0;">Refusées</p>
+        </div>
+    </div>
+</div>
+
+
+<div class="card-simple">
+    <style>
+        .action-btn {
+            display: inline-block;
+            margin: 8px 12px;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            cursor: pointer;
+            min-width: 180px;
+            text-align: center;
+        }
+
+        .btn-nouvelle {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-nouvelle:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-mes-demandes {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            color: white;
+        }
+
+        .btn-mes-demandes:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-deconnexion {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+        }
+
+        .btn-deconnexion:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #3d4449 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .buttons-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .action-btn {
+                display: block;
+                margin: 10px auto;
+                width: 90%;
+                max-width: 300px;
+            }
+        }
+    </style>
+
+    <div class="buttons-container">
+        <a href="{% url 'creer_demande' %}" class="action-btn btn-nouvelle">
+            📝 Nouvelle Demande
+        </a>
+        <a href="{% url 'consulter_demandes' %}" class="action-btn btn-mes-demandes">
+            📋 Mes Demandes
+        </a>
+        <a href="{% url 'logout' %}" class="action-btn btn-deconnexion">
+            🚪 Déconnexion
+        </a>
+    </div>
+
+    <p style="margin-top: 15px; color: #666; font-size: 14px; text-align: center;">
+        💡 <strong>Astuce :</strong> Vous pouvez créer jusqu'à 10 demandes par mois.
+    </p>
+</div>
+
+
+
+
+<div class="card-simple">
+    <h3>Matériels Disponibles (Aperçu)</h3>
+    <div class="row">
+        {% for materiel in materiels_disponibles|slice:":6" %}
+        <div class="col-md-4" style="margin-bottom: 15px;">
+            <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background-color: #f9f9f9;">
+                <h6 style="margin: 0 0 5px 0; color: #333;">{{ materiel.nom|truncatewords:3 }}</h6>
+                <p style="margin: 0; font-size: 12px; color: #666;">
+                    Stock: 
+                    <span style="
+                        {% if materiel.qte_dispo > 10 %}color: green;{% elif materiel.qte_dispo > 5 %}color: orange;{% elif materiel.qte_dispo > 0 %}color: red;{% else %}color: darkred;{% endif %}
+                        font-weight: bold;
+                    ">
+                        {{ materiel.qte_dispo }}
+                    </span>
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="text-align: center; margin-top: 10px;">
+        <a href="{% url 'voir_materiels' %}" class="action-btn btn-mes-demandes" style="background-color: white;">
+            Voir Tous les Matériels
+        </a>
+    </div>
+</div>
+
+
+<div class="card-simple">
+    <h3>Mes Informations</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <table style="width: 100%;">
+                <tr>
+                    <td style="padding: 8px; font-weight: bold;">Email:</td>
+                    <td style="padding: 8px;">{{ user.email }}</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td style="padding: 8px; font-weight: bold;">Nom:</td>
+                    <td style="padding: 8px;">{{ user.nom|default:"Non renseigné" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; font-weight: bold;">Prénom:</td>
+                    <td style="padding: 8px;">{{ user.prenom|default:"Non renseigné" }}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-md-6">
+            <table style="width: 100%;">
+                {% if user.site %}
+                <tr>
+                    <td style="padding: 8px; font-weight: bold;">Site:</td>
+                    <td style="padding: 8px;">{{ user.site.nom }}</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td style="padding: 8px; font-weight: bold;">Localisation:</td>
+                    <td style="padding: 8px;">{{ user.site.location|default:"Non renseignée" }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td style="padding: 8px; font-weight: bold;">Statut:</td>
+                    <td style="padding: 8px;"><span style="color: blue; font-weight: bold;">👤 Employé</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Aide et conseils -->
+<div class="card-simple">
+    <h3>💡 Aide et Conseils</h3>
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
+        <h5 style="margin-top: 0;">Comment faire une demande ?</h5>
+        <ol style="margin-bottom: 0;">
+            <li>Cliquez sur "Nouvelle Demande"</li>
+            <li>Choisissez la quantité (max 10)</li>
+            <li>Sélectionnez le(s) matériel(s)</li>
+            <li>Ajoutez une justification</li>
+            <li>Envoyez votre demande</li>
+        </ol>
+    </div>
+    
+    <div style="margin-top: 15px; background-color: #d1ecf1; padding: 15px; border-radius: 5px; border-left: 4px solid #17a2b8;">
+        <h5 style="margin-top: 0;">ℹ️ Informations importantes</h5>
+        <ul style="margin-bottom: 0;">
+            <li>Les demandes sont traitées sous 48h</li>
+            <li>Vous pouvez supprimer vos demandes en attente</li>
+            <li>Maximum 10 unités par demande</li>
+            <li>Justifiez vos demandes pour accélérer le traitement</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// JavaScript simple pour employé
+console.log('Dashboard employé chargé');
+
+// Fonction pour rafraîchir les stats
+function rafraichirStats() {
+    console.log('Rafraîchissement des statistiques...');
+    location.reload();
+}
+
+// Message de bienvenue
+window.onload = function() {
+    console.log('Bienvenue {{ user.prenom|default:user.username }} !');
+    
+    // Vérifier s'il y a des demandes en attente
+    var enAttente = {{ demandes_en_attente }};
+    if (enAttente > 0) {
+        console.log('Vous avez ' + enAttente + ' demande(s) en attente');
+    }
+};
+
+// Fonction pour créer une demande rapide (future fonctionnalité)
+function demandeRapide() {
+    if (confirm('Voulez-vous créer une nouvelle demande ?')) {
+        window.location.href = "{% url 'creer_demande' %}";
+    }
+}
+</script>
+{% endblock %}

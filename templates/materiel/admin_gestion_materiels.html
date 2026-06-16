@@ -1,0 +1,409 @@
+{% extends 'base_simple.html' %}
+
+{% block title %}Gestion des Matériels - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 0;
+    margin: -20px -20px 30px -20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-left: 4px solid;
+}
+
+.stat-card.total { border-left-color: #007bff; }
+.stat-card.disponibles { border-left-color: #28a745; }
+.stat-card.rupture { border-left-color: #dc3545; }
+.stat-card.faible { border-left-color: #ffc107; }
+
+.filters-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.materiel-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.materiel-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.stock-badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.stock-disponible { background: #d4edda; color: #155724; }
+.stock-faible { background: #fff3cd; color: #856404; }
+.stock-rupture { background: #f8d7da; color: #721c24; }
+
+.btn-action {
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 3px;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-modifier { background: #007bff; color: white; }
+.btn-modifier:hover { background: #0056b3; color: white; text-decoration: none; }
+
+.btn-supprimer { background: #dc3545; color: white; }
+.btn-supprimer:hover { background: #c82333; color: white; text-decoration: none; }
+
+.btn-ajouter {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.btn-ajouter:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+    transform: translateY(-2px);
+    color: white;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>📦 Gestion des Matériels</h1>
+    <p>Interface administrateur pour gérer l'inventaire et les stocks</p>
+    <div style="margin-top: 15px;">
+        <a href="{% url 'dashboard' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+            ← Retour au Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card total">
+        <h3 style="margin: 0; color: #007bff;">{{ stats.total }}</h3>
+        <p style="margin: 5px 0 0 0;">Total Matériels</p>
+    </div>
+    
+    <div class="stat-card disponibles">
+        <h3 style="margin: 0; color: #28a745;">{{ stats.disponibles }}</h3>
+        <p style="margin: 5px 0 0 0;">Disponibles</p>
+    </div>
+    
+    <div class="stat-card faible">
+        <h3 style="margin: 0; color: #ffc107;">{{ stats.faible_stock }}</h3>
+        <p style="margin: 5px 0 0 0;">Stock Faible</p>
+    </div>
+    
+    <div class="stat-card rupture">
+        <h3 style="margin: 0; color: #dc3545;">{{ stats.rupture }}</h3>
+        <p style="margin: 5px 0 0 0;">En Rupture</p>
+    </div>
+</div>
+
+<div style="text-align: center; margin-bottom: 20px;">
+    <button onclick="showAddForm()" class="btn-ajouter" style="border: none; cursor: pointer;">
+        ➕ Ajouter un Nouveau Matériel
+    </button>
+</div>
+
+<!-- Formulaire d'ajout (masqué par défaut) -->
+<div id="addForm" style="display: none; background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h4>➕ Ajouter un Nouveau Matériel</h4>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+
+        <div class="row">
+            <div class="col-md-6">
+                <div style="margin-bottom: 15px;">
+                    <label>Nom du matériel *</label>
+                    <input type="text" name="nom" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div style="margin-bottom: 15px;">
+                    <label>Référence</label>
+                    <input type="text" name="reference" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div style="margin-bottom: 15px;">
+                    <label>Quantité disponible *</label>
+                    <input type="number" name="qte_dispo" required min="0" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div style="margin-bottom: 15px;">
+                    <label>Site</label>
+                    <select name="site" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                        <option value="">-- Sélectionner un site --</option>
+                        {% for site in sites %}
+                            <option value="{{ site.id }}">{{ site.nom }} - {{ site.location }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Description</label>
+            <textarea name="description" rows="3" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;"></textarea>
+        </div>
+
+        <div style="text-align: center;">
+            <button type="submit" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-right: 10px;">
+                ✅ Ajouter
+            </button>
+            <button type="button" onclick="hideAddForm()" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                ❌ Annuler
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="filters-section">
+    <h4>🔍 Filtres et Recherche</h4>
+    <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+        <div>
+            <label>Recherche :</label>
+            <input type="text" name="search" value="{{ search }}" placeholder="Nom du matériel" 
+                   style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; width: 200px;">
+        </div>
+        
+        <div>
+            <label>Site :</label>
+            <select name="site" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                <option value="">Tous les sites</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if site_filter == site.id|stringformat:"s" %}selected{% endif %}>
+                        {{ site.nom }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label>Stock :</label>
+            <select name="stock" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                <option value="">Tous</option>
+                <option value="disponible" {% if stock_filter == 'disponible' %}selected{% endif %}>Disponible (>5)</option>
+                <option value="faible" {% if stock_filter == 'faible' %}selected{% endif %}>Faible (1-5)</option>
+                <option value="rupture" {% if stock_filter == 'rupture' %}selected{% endif %}>Rupture (0)</option>
+            </select>
+        </div>
+        
+        <button type="submit" style="background: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 5px;">
+            Filtrer
+        </button>
+        
+        <a href="{% url 'admin_gestion_materiels' %}" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none;">
+            Réinitialiser
+        </a>
+    </form>
+</div>
+
+{% if materiels %}
+    {% for materiel in materiels %}
+    <div class="materiel-card">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+                <h5 style="margin: 0 0 10px 0; color: #333;">{{ materiel.nom }}</h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p style="margin: 5px 0;"><strong>📋 Référence :</strong> {{ materiel.reference|default:"Non définie" }}</p>
+                        <p style="margin: 5px 0;"><strong>🏢 Site :</strong> {{ materiel.site.nom|default:"Non assigné" }}</p>
+                        <p style="margin: 5px 0;"><strong>📅 Ajouté le :</strong> {{ materiel.date_ajout|date:"d/m/Y" }}</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <p style="margin: 5px 0;"><strong>📦 Stock :</strong>
+                            {% if materiel.qte_dispo > 5 %}
+                                <span class="stock-badge stock-disponible">{{ materiel.qte_dispo }} disponible(s)</span>
+                            {% elif materiel.qte_dispo > 0 %}
+                                <span class="stock-badge stock-faible">{{ materiel.qte_dispo }} disponible(s)</span>
+                            {% else %}
+                                <span class="stock-badge stock-rupture">Rupture de stock</span>
+                            {% endif %}
+                        </p>
+                        
+                        {% if materiel.description %}
+                            <p style="margin: 5px 0;"><strong>📝 Description :</strong></p>
+                            <div style="background: #f8f9fa; padding: 8px; border-radius: 5px; font-size: 14px;">
+                                {{ materiel.description|truncatewords:15 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: right; margin-left: 20px;">
+                <div style="margin-bottom: 10px;">
+                    <button onclick="showEditForm({{ materiel.id }})" class="btn-action btn-modifier" style="border: none; cursor: pointer;">
+                        ✏️ Modifier
+                    </button>
+                </div>
+                <div>
+                    <form method="POST" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="materiel_id" value="{{ materiel.id }}">
+                        <button type="submit" class="btn-action btn-supprimer" style="border: none; cursor: pointer;"
+                               onclick="return confirm('Supprimer {{ materiel.nom }} ?')">
+                            🗑️ Supprimer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulaire de modification (masqué par défaut) -->
+        <div id="editForm{{ materiel.id }}" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+            <h6>✏️ Modifier {{ materiel.nom }}</h6>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="materiel_id" value="{{ materiel.id }}">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div style="margin-bottom: 10px;">
+                            <label>Nom *</label>
+                            <input type="text" name="nom" value="{{ materiel.nom }}" required style="width: 100%; padding: 5px; border-radius: 3px; border: 1px solid #ddd;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="margin-bottom: 10px;">
+                            <label>Référence</label>
+                            <input type="text" name="reference" value="{{ materiel.reference|default:'' }}" style="width: 100%; padding: 5px; border-radius: 3px; border: 1px solid #ddd;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div style="margin-bottom: 10px;">
+                            <label>Quantité *</label>
+                            <input type="number" name="qte_dispo" value="{{ materiel.qte_dispo }}" required min="0" style="width: 100%; padding: 5px; border-radius: 3px; border: 1px solid #ddd;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="margin-bottom: 10px;">
+                            <label>Site</label>
+                            <select name="site" style="width: 100%; padding: 5px; border-radius: 3px; border: 1px solid #ddd;">
+                                <option value="">-- Aucun site --</option>
+                                {% for site in sites %}
+                                    <option value="{{ site.id }}" {% if materiel.site.id == site.id %}selected{% endif %}>
+                                        {{ site.nom }} - {{ site.location }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label>Description</label>
+                    <textarea name="description" rows="2" style="width: 100%; padding: 5px; border-radius: 3px; border: 1px solid #ddd;">{{ materiel.description|default:'' }}</textarea>
+                </div>
+
+                <div style="text-align: center;">
+                    <button type="submit" style="background: #28a745; color: white; padding: 8px 15px; border: none; border-radius: 3px; margin-right: 10px;">
+                        ✅ Sauvegarder
+                    </button>
+                    <button type="button" onclick="hideEditForm({{ materiel.id }})" style="background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 3px;">
+                        ❌ Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
+        <h4>📭 Aucun matériel trouvé</h4>
+        <p>Il n'y a actuellement aucun matériel correspondant aux critères.</p>
+        <a href="{% url 'ajouter_materiel' %}" class="btn-ajouter">
+            ➕ Ajouter le premier matériel
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('Interface admin matériels chargée');
+console.log('Total matériels: {{ stats.total }}');
+
+function showAddForm() {
+    document.getElementById('addForm').style.display = 'block';
+    document.querySelector('#addForm input[name="nom"]').focus();
+}
+
+function hideAddForm() {
+    document.getElementById('addForm').style.display = 'none';
+}
+
+function showEditForm(materielId) {
+    document.getElementById('editForm' + materielId).style.display = 'block';
+}
+
+function hideEditForm(materielId) {
+    document.getElementById('editForm' + materielId).style.display = 'none';
+}
+
+// Fermer les formulaires avec Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideAddForm();
+        // Fermer tous les formulaires d'édition
+        const editForms = document.querySelectorAll('[id^="editForm"]');
+        editForms.forEach(form => {
+            form.style.display = 'none';
+        });
+    }
+});
+</script>
+{% endblock %}

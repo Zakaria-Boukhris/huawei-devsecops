@@ -1,0 +1,238 @@
+{% extends 'base_simple.html' %}
+
+{% block title %}Traiter Demande #{{ demande.id }} - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 0;
+    margin: -20px -20px 30px -20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.demande-details {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.action-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.status-badge {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.status-attente { background: #fff3cd; color: #856404; }
+.status-validee { background: #d4edda; color: #155724; }
+.status-refusee { background: #f8d7da; color: #721c24; }
+
+.action-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.3s ease;
+}
+
+.btn-valider {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.btn-valider:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+    transform: translateY(-2px);
+}
+
+.btn-refuser {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.btn-refuser:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    transform: translateY(-2px);
+}
+
+.btn-attente {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #212529;
+}
+
+.btn-attente:hover {
+    background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+    transform: translateY(-2px);
+}
+
+.site-info {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #2196f3;
+    margin: 15px 0;
+}
+
+.materiel-item {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+    border-left: 3px solid #007bff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>🔧 Traiter Demande #{{ demande.id }}</h1>
+    <p>Interface de traitement pour les demandes des employés</p>
+    <div style="margin-top: 15px;">
+        <a href="{% url 'admin_gestion_demandes' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+            ← Retour à la liste
+        </a>
+    </div>
+</div>
+
+<div class="demande-details">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>📋 Détails de la Demande</h3>
+        {% if demande.statuts == 'EN_ATTENTE' %}
+            <span class="status-badge status-attente">⏳ En Attente</span>
+        {% elif demande.statuts == 'VALIDEE' %}
+            <span class="status-badge status-validee">✅ Validée</span>
+        {% elif demande.statuts == 'REFUSEE' %}
+            <span class="status-badge status-refusee">❌ Refusée</span>
+        {% endif %}
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h5>👤 Informations Employé</h5>
+            <p><strong>Nom :</strong> {{ demande.employee.prenom }} {{ demande.employee.nom }}</p>
+            <p><strong>Email :</strong> {{ demande.employee.email }}</p>
+            <p><strong>Date de demande :</strong> {{ demande.date_dmd|date:"d/m/Y à H:i" }}</p>
+            
+            {% if demande.date_validation %}
+                <p><strong>Date de traitement :</strong> {{ demande.date_validation|date:"d/m/Y à H:i" }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6">
+            <h5>📦 Détails de la Demande</h5>
+            <p><strong>Quantité totale :</strong> {{ demande.qte }}</p>
+            
+            <h6>Matériel(s) demandé(s) :</h6>
+            {% for materiel in demande.materiel.all %}
+                <div class="materiel-item">
+                    <strong>{{ materiel.nom }}</strong><br>
+                    <small>Référence: {{ materiel.reference|default:"N/A" }}</small><br>
+                    <small>Stock disponible: 
+                        <span style="color: {% if materiel.qte_dispo > 10 %}green{% elif materiel.qte_dispo > 5 %}orange{% elif materiel.qte_dispo > 0 %}red{% else %}darkred{% endif %};">
+                            {{ materiel.qte_dispo }}
+                        </span>
+                    </small>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="site-info">
+        <h5>🏢 Informations de Livraison</h5>
+        {% for materiel in demande.materiel.all %}
+            <p><strong>{{ materiel.nom }}</strong> → Site: <strong>{{ materiel.site.nom|default:"Non assigné" }}</strong></p>
+        {% endfor %}
+    </div>
+    
+    {% if demande.commentaire_admin %}
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+            <h6>💬 Commentaire administrateur précédent :</h6>
+            <p style="font-style: italic; margin: 0;">{{ demande.commentaire_admin }}</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="action-section">
+    <h3>⚡ Actions de Traitement</h3>
+    <p>Choisissez l'action à effectuer pour cette demande :</p>
+    
+    <form method="POST" style="margin-top: 20px;">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label for="commentaire" style="display: block; margin-bottom: 5px; font-weight: bold;">
+                💬 Commentaire (optionnel) :
+            </label>
+            <textarea name="commentaire" id="commentaire" rows="3" 
+                      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                      placeholder="Ajoutez un commentaire pour expliquer votre décision...">{{ demande.commentaire_admin }}</textarea>
+        </div>
+        
+        <div style="text-align: center;">
+            <button type="submit" name="action" value="valider" class="action-btn btn-valider">
+                ✅ Valider la Demande
+            </button>
+            
+            <button type="submit" name="action" value="refuser" class="action-btn btn-refuser">
+                ❌ Refuser la Demande
+            </button>
+            
+            <button type="submit" name="action" value="attente" class="action-btn btn-attente">
+                ⏳ Remettre en Attente
+            </button>
+        </div>
+    </form>
+    
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+        <a href="{% url 'admin_gestion_demandes' %}" 
+           style="background: #6c757d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+            🔙 Retour sans traiter
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const buttons = document.querySelectorAll('.action-btn');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const action = this.value;
+            let message = '';
+            
+            if (action === 'valider') {
+                message = 'Êtes-vous sûr de vouloir VALIDER cette demande ?';
+            } else if (action === 'refuser') {
+                message = 'Êtes-vous sûr de vouloir REFUSER cette demande ?';
+            } else if (action === 'attente') {
+                message = 'Remettre cette demande en ATTENTE ?';
+            }
+            
+            if (!confirm(message)) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+
+console.log('Interface traitement demande #{{ demande.id }} chargée');
+</script>
+{% endblock %}
