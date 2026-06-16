@@ -1,0 +1,38 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-pod-hardening
+spec:
+  background: true
+  rules:
+    - name: exiger-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - django-app
+      validate:
+        failureAction: Enforce
+        message: "Le pod doit definir runAsNonRoot a true."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+    - name: interdire-escalade-privileges
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - django-app
+      validate:
+        failureAction: Enforce
+        message: "allowPrivilegeEscalation doit etre false."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false

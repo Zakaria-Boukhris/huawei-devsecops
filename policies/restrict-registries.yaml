@@ -1,0 +1,22 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+spec:
+  background: true
+  rules:
+    - name: validate-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - django-app
+      validate:
+        failureAction: Enforce
+        message: "Les images doivent provenir de ghcr.io"
+        pattern:
+          spec:
+            containers:
+              - image: "ghcr.io/*"
