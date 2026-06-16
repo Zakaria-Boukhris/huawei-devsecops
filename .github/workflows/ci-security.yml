@@ -35,9 +35,21 @@ jobs:
       - name: Bandit (analyse Python)
         run: bandit -r . -ll
 
+  iac:
+    name: Audit IaC (Checkov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkov (Dockerfile + manifestes K8s)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/src" \
+            bridgecrew/checkov -d /src \
+            --framework dockerfile kubernetes \
+            --compact --soft-fail
+
   build-scan-push:
     name: Build, scan CVE et push
-    needs: [secrets, sast]
+    needs: [secrets, sast, iac]
     runs-on: ubuntu-latest
     permissions:
       contents: read
